@@ -13,6 +13,7 @@ Then you can call the API functions.
 - GetProfileFeed
 - GetProfileRelationship
 - GetFeed
+- GetFriends
 - GetFriendData
 - GetBookmark
 - GetScrapData
