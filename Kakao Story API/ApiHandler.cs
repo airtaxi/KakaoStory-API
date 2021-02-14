@@ -46,12 +46,12 @@ namespace StoryApi
             string response = await GetResponseFromRequest(webRequest);
             return JsonConvert.DeserializeObject<TimeLineData.TimeLine>(response);
         }
-        public static async Task<string> GetFriendData()
+        public static async Task<FriendData.Friends> GetFriends()
         {
             string requestURI = "https://story.kakao.com/a/friends/";
 
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI);
-            return await GetResponseFromRequest(webRequest);
+            return JsonConvert.DeserializeObject<FriendData.Friends>(await GetResponseFromRequest(webRequest));
         }
         public static async Task<BookmarkData.Bookmarks> GetBookmarks(string id, string from)
         {
