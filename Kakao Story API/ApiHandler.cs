@@ -17,7 +17,7 @@ namespace StoryApi
 
         public static void Init(CookieContainer cookieContainer)
         {
-            _cookieContainer = cookieContainer
+            _cookieContainer = cookieContainer;
         }
         public static async Task<ProfileData.ProfileObject> GetProfileFeed(string id, string from, bool noActivity = false)
         {
@@ -53,7 +53,7 @@ namespace StoryApi
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI);
             return await GetResponseFromRequest(webRequest);
         }
-        public static async Task<BookmarkData.Bookmarks> GetBookmark(string id, string from)
+        public static async Task<BookmarkData.Bookmarks> GetBookmarks(string id, string from)
         {
             string requestURI = "https://story.kakao.com/a/profiles/" + id + "/sections/bookmark";
             if (from != null)
@@ -109,7 +109,7 @@ namespace StoryApi
             string response = await GetResponseFromRequest(webRequest);
             return JsonConvert.DeserializeObject<List<ShareData.Share>>(response);
         }
-        public static async Task<List<Comment>> GetComment(string id, string since)
+        public static async Task<List<Comment>> GetComments(string id, string since)
         {
             string requestURI = "https://story.kakao.com/a/activities/" + id + "/comments?lpp=30&order=desc";
             if (since != null)
@@ -126,16 +126,16 @@ namespace StoryApi
             string response = await GetResponseFromRequest(webRequest);
             return JsonConvert.DeserializeObject<UserProfile.ProfileData>(response);
         }
-        public static async Task<List<DataType.Actor>> GetSpecificFriends(string id)
+        public static async Task<List<DataType.Actor>> GetSpecificFriend(string id)
         {
             string requestURI = "https://story.kakao.com/a/activities/" + id + "/specific_friends";
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI);
             string response = await GetResponseFromRequest(webRequest);
             return JsonConvert.DeserializeObject<List<DataType.Actor>>(response);
         }
-        public static async Task<bool> LikeComment(string FeedID, string commentID, bool isDelete)
+        public static async Task<bool> LikeComment(string postId, string commentID, bool isDelete)
         {
-            string requestURI = "https://story.kakao.com/a/activities/" + FeedID + "/comments/" + commentID + "/likes";
+            string requestURI = "https://story.kakao.com/a/activities/" + postId + "/comments/" + commentID + "/likes";
             string method;
             if (isDelete == true)
                 method = "DELETE";
@@ -144,7 +144,7 @@ namespace StoryApi
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, method);
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> FriendRequest(string id, bool isDelete)
+        public static async Task<bool> RequestFriend(string id, bool isDelete)
         {
             string requestURI;
             string key;
@@ -170,7 +170,7 @@ namespace StoryApi
 
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> FriendAccept(string id, bool isDelete)
+        public static async Task<bool> AcceptFriendRequest(string id, bool isDelete)
         {
             string requestURI;
             if (isDelete)
@@ -188,7 +188,7 @@ namespace StoryApi
 
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> FavoriteRequest(string id, bool isUnpin)
+        public static async Task<bool> RequestFavorite(string id, bool isUnpin)
         {
             string requestURI = "https://story.kakao.com/a/friends/" + id + "/favorite";
             string method;
@@ -213,9 +213,9 @@ namespace StoryApi
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, method);
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> ShareFeed(string feedId, string text, List<QuoteData> quoteDatas, string permission, bool commentable, List<string> with_ids, List<string> trust_ids)
+        public static async Task<bool> SharePost(string postId, string text, List<QuoteData> quoteDatas, string permission, bool commentable, List<string> with_ids, List<string> trust_ids)
         {
-            string requestURI = "https://story.kakao.com/a/activities/" + feedId + "/share";
+            string requestURI = "https://story.kakao.com/a/activities/" + postId + "/share";
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, "POST");
             string textContent = Uri.EscapeDataString(JsonConvert.SerializeObject(quoteDatas).Replace("\"id\":null,", ""));
 
@@ -236,9 +236,9 @@ namespace StoryApi
 
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> UPFeed(string FeedID, bool isDelete)
+        public static async Task<bool> UpPost(string postId, bool isDelete)
         {
-            string requestURI = "https://story.kakao.com/a/activities/" + FeedID + "/sympathy";
+            string requestURI = "https://story.kakao.com/a/activities/" + postId + "/sympathy";
             string method;
             if (isDelete)
                 method = "DELETE";
@@ -248,9 +248,9 @@ namespace StoryApi
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, method);
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> LikeFeed(string FeedID, string emotion)
+        public static async Task<bool> LikePost(string postId, string emotion)
         {
-            string requestURI = "https://story.kakao.com/a/activities/" + FeedID + "/like";
+            string requestURI = "https://story.kakao.com/a/activities/" + postId + "/like";
             string method;
             if (emotion == null)
                 method = "DELETE";
@@ -291,9 +291,9 @@ namespace StoryApi
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, "DELETE");
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> DeleteLike(string FeedID, string id)
+        public static async Task<bool> DeleteLike(string postId, string id)
         {
-            string requestURI = "https://story.kakao.com/a/activities/" + FeedID + "/like";
+            string requestURI = "https://story.kakao.com/a/activities/" + postId + "/like";
 
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, "DELETE");
 
@@ -426,7 +426,7 @@ namespace StoryApi
 
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<List<Notification>> GetNotification()
+        public static async Task<List<Notification>> GetNotifications()
         {
             string requestURI = "https://story.kakao.com/a/notifications";
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI);
@@ -439,9 +439,9 @@ namespace StoryApi
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, "DELETE");
             return await GetResponseFromRequest(webRequest) != null;
         }
-        public static async Task<bool> ReplyToFeed(string feedId, string text, List<QuoteData> quoteDatas, UploadedImageProp img = null)
+        public static async Task<bool> ReplyToPost(string postId, string text, List<QuoteData> quoteDatas, UploadedImageProp img = null)
         {
-            string requestURI = "https://story.kakao.com/a/activities/" + feedId + "/comments";
+            string requestURI = "https://story.kakao.com/a/activities/" + postId + "/comments";
             string textContent = Uri.EscapeDataString(JsonConvert.SerializeObject(quoteDatas).Replace("\"id\":null,", ""));
 
             string postData;
@@ -715,7 +715,7 @@ namespace StoryApi
             var videoData = JsonConvert.DeserializeObject<VideoData.Video>(respResult);
             return videoData.access_key;
         }
-        public static async Task<bool> WritePost(List<QuoteData> quoteDatas, MediaData mediaData, string permission, bool isCommentable, bool isSharable, List<string> with_ids, List<string> trust_ids, string scrapDataString = null, bool isEdit = false, List<string> editOldMediaPaths = null, string editFeedId = null)
+        public static async Task<bool> WritePost(List<QuoteData> quoteDatas, MediaData mediaData, string permission, bool isCommentable, bool isSharable, List<string> with_ids, List<string> trust_ids, string scrapDataString = null, bool isEdit = false, List<string> editOldMediaPaths = null, string editPostId = null)
         {
             if (editOldMediaPaths is null)
                 editOldMediaPaths = new List<string>();
@@ -756,7 +756,7 @@ namespace StoryApi
 
             string requestURI = "https://story.kakao.com/a/activities";
             if (isEdit)
-                requestURI = "https://story.kakao.com/a/activities/" + editFeedId + "/content";
+                requestURI = "https://story.kakao.com/a/activities/" + editPostId + "/content";
 
             HttpWebRequest request = WebRequest.CreateHttp(requestURI);
             request.Method = "POST";
