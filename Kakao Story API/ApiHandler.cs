@@ -13,13 +13,11 @@ namespace StoryApi
     public static partial class ApiHandler
     {
         private static CookieContainer _cookieContainer { get; set; } = null;
-        private static string _cookieString { get; set; } = null;
         public static int MaxRetryCount { get; set; } = 10;
 
-        public static void Init(CookieContainer cookieContainer, string cookieString)
+        public static void Init(CookieContainer cookieContainer)
         {
-            _cookieContainer = cookieContainer;
-            _cookieString = cookieString;
+            _cookieContainer = cookieContainer
         }
         public static async Task<ProfileData.ProfileObject> GetProfileFeed(string id, string from, bool noActivity = false)
         {
@@ -807,9 +805,7 @@ namespace StoryApi
             HttpWebRequest request = WebRequest.CreateHttp(requestURI);
             request.Method = "POST";
             request.ContentType = "multipart/form-data; boundary=" + boundary;
-            CookieContainer containerNow = new CookieContainer();
-            containerNow.SetCookies(new Uri("https://up-api-kage-4story.kakao.com/"), _cookieString);
-            request.CookieContainer = containerNow;
+            request.CookieContainer = _cookieContainer;
 
             request.Headers["Accept-Encoding"] = "gzip, deflate, br";
             request.Headers["Accept-Language"] = "ko-KR";
