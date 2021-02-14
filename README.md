@@ -18,7 +18,7 @@ Then you can call the API functions.
 - GetScrapData
 - SetActivityProfile
 - (Un)MutePost
-- GetSharess
+- GetShares
 - GetComments
 - GetProfileData
 - GetSpecificFriend
