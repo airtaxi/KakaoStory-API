@@ -730,9 +730,9 @@ namespace StoryApi
             postDataBuilder.Append("permission=" + permission + "&comment_all_writable=" + commentable + "&is_must_read=false&enable_share=" + sharable);
             postDataBuilder.Append("&content=" + textContent);
 
-            if (with_ids.Count > 0)
+            if ((with_ids?.Count ?? 0) > 0)
                 postDataBuilder.Append("&with_tags=" + Uri.EscapeDataString(JsonConvert.SerializeObject(with_ids)));
-            if (trust_ids.Count > 0)
+            if ((trust_ids?.Count ?? 0) > 0)
                 postDataBuilder.Append("&allowed_profile_ids=" + Uri.EscapeDataString(JsonConvert.SerializeObject(trust_ids)));
 
             string mediaText = JsonConvert.SerializeObject(mediaData);
@@ -906,14 +906,10 @@ namespace StoryApi
             response.Close();
             VideoData.Percent pecrentData = JsonConvert.DeserializeObject<VideoData.Percent>(respResult);
             if (pecrentData.code == 200 && pecrentData.percent == 100)
-            {
                 return await WaitForMetaVideoFinish(access_key);
-            }
             else
-            {
                 await Task.Delay(1500);
                 return await WaitForVideoUploadFinish(access_key);
-            }
         }
 
         private static string GetBoolString(bool src)
