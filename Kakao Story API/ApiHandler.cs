@@ -715,83 +715,112 @@ namespace StoryApi
             var videoData = JsonConvert.DeserializeObject<VideoData.Video>(respResult);
             return videoData.access_key;
         }
+        public static int retryCount = 0;
         public static async Task<bool> WritePost(List<QuoteData> quoteDatas, MediaData mediaData, string permission, bool isCommentable, bool isSharable, List<string> with_ids, List<string> trust_ids, string scrapDataString = null, bool isEdit = false, List<string> editOldMediaPaths = null, string editPostId = null)
         {
-            if (editOldMediaPaths is null)
-                editOldMediaPaths = new List<string>();
-
-            string commentable = isCommentable ? "true" : "false";
-            string sharable = isSharable ? "true" : "false";
-            string textContent = Uri.EscapeDataString(JsonConvert.SerializeObject(quoteDatas, Formatting.None, new JsonSerializerSettings
+            try
             {
-                NullValueHandling = NullValueHandling.Ignore
-            }));
-            StringBuilder postDataBuilder = new StringBuilder();
-            postDataBuilder.Append("permission=" + permission + "&comment_all_writable=" + commentable + "&is_must_read=false&enable_share=" + sharable);
-            postDataBuilder.Append("&content=" + textContent);
+                if (editOldMediaPaths is null)
+                    editOldMediaPaths = new List<string>();
 
-            if ((with_ids?.Count ?? 0) > 0)
-                postDataBuilder.Append("&with_tags=" + Uri.EscapeDataString(JsonConvert.SerializeObject(with_ids)));
-            if ((trust_ids?.Count ?? 0) > 0)
-                postDataBuilder.Append("&allowed_profile_ids=" + Uri.EscapeDataString(JsonConvert.SerializeObject(trust_ids)));
+                string commentable = isCommentable ? "true" : "false";
+                string sharable = isSharable ? "true" : "false";
+                string textContent = Uri.EscapeDataString(JsonConvert.SerializeObject(quoteDatas, Formatting.None, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                }));
+                StringBuilder postDataBuilder = new StringBuilder();
+                postDataBuilder.Append("permission=" + permission + "&comment_all_writable=" + commentable + "&is_must_read=false&enable_share=" + sharable);
+                postDataBuilder.Append("&content=" + textContent);
 
-            string mediaText = JsonConvert.SerializeObject(mediaData);
-            if (mediaText != null)
-            {
-                postDataBuilder.Append("&" + Uri.EscapeDataString("media") + "=" + Uri.EscapeDataString(mediaText));
+                if ((with_ids?.Count ?? 0) > 0)
+                    postDataBuilder.Append("&with_tags=" + Uri.EscapeDataString(JsonConvert.SerializeObject(with_ids)));
+                if ((trust_ids?.Count ?? 0) > 0)
+                    postDataBuilder.Append("&allowed_profile_ids=" + Uri.EscapeDataString(JsonConvert.SerializeObject(trust_ids)));
+
+                string mediaText = JsonConvert.SerializeObject(mediaData);
+                if (mediaText != null)
+                {
+                    postDataBuilder.Append("&" + Uri.EscapeDataString("media") + "=" + Uri.EscapeDataString(mediaText));
+                }
+                foreach (string mediaPath in editOldMediaPaths)
+                {
+                    postDataBuilder.Append("&" + Uri.EscapeDataString("old_media_path[]") + "=" + Uri.EscapeDataString(mediaPath));
+                }
+
+                if (scrapDataString != null)
+                {
+                    postDataBuilder.Append("&scrap_content=" + Uri.EscapeDataString(scrapDataString));
+                }
+
+                string postData = postDataBuilder.ToString();
+
+                byte[] byteArray = Encoding.UTF8.GetBytes(postData);
+
+                string requestURI = "https://story.kakao.com/a/activities";
+                if (isEdit)
+                    requestURI = "https://story.kakao.com/a/activities/" + editPostId + "/content";
+
+                HttpWebRequest request = WebRequest.CreateHttp(requestURI);
+                request.Method = "POST";
+                if (isEdit)
+                    request.Method = "PUT";
+                request.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
+
+                request.CookieContainer = _cookieContainer;
+                request.Headers["X-Kakao-DeviceInfo"] = "web:d;-;-";
+                request.Headers["X-Kakao-ApiLevel"] = "46";
+                request.Headers["X-Requested-With"] = "XMLHttpRequest";
+                request.Headers["X-Kakao-VC"] = "185412afe1da9580e67f";
+                request.Headers["Cache-Control"] = "max-age=0";
+
+                request.Headers["Accept-Encoding"] = "gzip, deflate, br";
+                request.Headers["Accept-Language"] = "ko";
+
+                request.Headers["DNT"] = "1";
+
+                request.Headers["authority"] = "story.kakao.com";
+                request.Referer = "https://story.kakao.com";
+                request.KeepAlive = true;
+                request.UseDefaultCredentials = true;
+                request.Host = "story.kakao.com";
+                request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
+                request.Accept = "application/json";
+
+                //Console.WriteLine("L4");
+                Stream writeStream = await request.GetRequestStreamAsync();
+                writeStream.Write(byteArray, 0, byteArray.Length);
+
+                //Console.WriteLine("L3");
+                var readStream = await request.GetResponseAsync();
+                //Console.WriteLine("L2");
+                var respReader = readStream.GetResponseStream();
+                await (new StreamReader(respReader, Encoding.UTF8)).ReadToEndAsync();
+                respReader.Close();
+                retryCount = 0;
             }
-            foreach (string mediaPath in editOldMediaPaths)
+            catch (WebException ex)
             {
-                postDataBuilder.Append("&" + Uri.EscapeDataString("old_media_path[]") + "=" + Uri.EscapeDataString(mediaPath));
+                File.AppendAllText("ErrorNative.log", $"{DateTime.Now}: {ex.Message}\n{ex.StackTrace}{Environment.NewLine}");
+                var readStream = ex.Response;
+                var respReader = readStream.GetResponseStream();
+                var response = readStream as HttpWebResponse;
+                var content = await (new StreamReader(respReader, Encoding.UTF8)).ReadToEndAsync();
+                File.AppendAllText("Error.log", $"{DateTime.Now}: {content}{Environment.NewLine}");
+                if (response?.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    retryCount++;
+                    await Task.Delay(500);
+                    if (retryCount <= 5)
+                        return await WritePost(quoteDatas, mediaData, permission, isCommentable, isSharable, with_ids, trust_ids, scrapDataString, isEdit, editOldMediaPaths, editPostId);
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                    return false;
             }
-
-            if (scrapDataString != null)
-            {
-                postDataBuilder.Append("&scrap_content=" + Uri.EscapeDataString(scrapDataString));
-            }
-
-            string postData = postDataBuilder.ToString();
-
-            byte[] byteArray = Encoding.UTF8.GetBytes(postData);
-
-            string requestURI = "https://story.kakao.com/a/activities";
-            if (isEdit)
-                requestURI = "https://story.kakao.com/a/activities/" + editPostId + "/content";
-
-            HttpWebRequest request = WebRequest.CreateHttp(requestURI);
-            request.Method = "POST";
-            if (isEdit)
-                request.Method = "PUT";
-            request.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
-
-            request.CookieContainer = _cookieContainer;
-            request.Headers["X-Kakao-DeviceInfo"] = "web:d;-;-";
-            request.Headers["X-Kakao-ApiLevel"] = "46";
-            request.Headers["X-Requested-With"] = "XMLHttpRequest";
-            request.Headers["X-Kakao-VC"] = "185412afe1da9580e67f";
-            request.Headers["Cache-Control"] = "max-age=0";
-
-            request.Headers["Accept-Encoding"] = "gzip, deflate, br";
-            request.Headers["Accept-Language"] = "ko";
-
-            request.Headers["DNT"] = "1";
-
-            request.Headers["authority"] = "story.kakao.com";
-            request.Referer = "https://story.kakao.com";
-            request.KeepAlive = true;
-            request.UseDefaultCredentials = true;
-            request.Host = "story.kakao.com";
-            request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
-            request.Accept = "application/json";
-
-            Stream writeStream = await request.GetRequestStreamAsync();
-            writeStream.Write(byteArray, 0, byteArray.Length);
-
-            var readStream = await request.GetResponseAsync();
-            var respReader = readStream.GetResponseStream();
-            await (new StreamReader(respReader, Encoding.UTF8)).ReadToEndAsync();
-            respReader.Close();
-
             return true;
         }
         public static async Task<string> UploadImage(AssetData asset)
@@ -908,8 +937,8 @@ namespace StoryApi
             if (pecrentData.code == 200 && pecrentData.percent == 100)
                 return await WaitForMetaVideoFinish(access_key);
             else
-                await Task.Delay(1500);
-                return await WaitForVideoUploadFinish(access_key);
+                await Task.Delay(500);
+            return await WaitForVideoUploadFinish(access_key);
         }
 
         private static string GetBoolString(bool src)
