@@ -37,7 +37,7 @@ namespace StoryApi
             ProfileRelationshipData.ProfileRelationship obj = JsonConvert.DeserializeObject<ProfileRelationshipData.ProfileRelationship>(response);
             return obj;
         }
-        public static async Task<TimeLineData.TimeLine> GetFeed(string from)
+        public static async Task<TimeLineData.TimeLine> GetFeed(string from = null)
         {
             string requestURI = "https://story.kakao.com/a/feeds";
             if (from != null)
@@ -45,6 +45,12 @@ namespace StoryApi
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI);
             string response = await GetResponseFromRequest(webRequest);
             return JsonConvert.DeserializeObject<TimeLineData.TimeLine>(response);
+        }
+        public static async Task HidePost(string id)
+        {
+            string requestURI = "https://story.kakao.com/a/feeds/" + id;
+            HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, "DELETE");
+            string response = await GetResponseFromRequest(webRequest);
         }
         public static async Task<FriendData.Friends> GetFriends()
         {
