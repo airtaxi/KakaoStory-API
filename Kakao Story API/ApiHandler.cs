@@ -50,7 +50,13 @@ namespace StoryApi
         {
             string requestURI = "https://story.kakao.com/a/feeds/" + id;
             HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, "DELETE");
-            string response = await GetResponseFromRequest(webRequest);
+            await GetResponseFromRequest(webRequest);
+        }
+        public static async Task BlockProfile(string id, bool isUnblock)
+        {
+            string requestURI = "https://story.kakao.com/a/profiles/" + id + "/feed_block";
+            HttpWebRequest webRequest = GenerateDefaultProfile(requestURI, isUnblock ? "DELETE" : "POST");
+            await GetResponseFromRequest(webRequest);
         }
         public static async Task<FriendData.Friends> GetFriends()
         {
