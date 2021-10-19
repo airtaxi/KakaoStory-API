@@ -872,6 +872,7 @@ namespace StoryApi
                     public string content { get; set; }
                     public bool required { get; set; }
                     public bool liked { get; set; }
+                    public string liked_emotion { get; set; }
                     public string feed_id { get; set; }
                     public string sid { get; set; }
                     public bool sympathized { get; set; }
