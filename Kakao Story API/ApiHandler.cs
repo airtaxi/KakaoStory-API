@@ -820,6 +820,7 @@ namespace StoryApi
                 else
                     return false;
             }
+            retryCount = 0;
             return true;
         }
         public static async Task<string> UploadImage(AssetData asset)
@@ -863,7 +864,7 @@ namespace StoryApi
                 respReader.Close();
 
                 UploadedImageProp result = JsonConvert.DeserializeObject<UploadedImageProp>(respResult);
-
+                retryCount = 0;
                 return result.access_key + "/" + result.info.original.filename + "?width=" + result.info.original.width + "&height=" + result.info.original.height + "&avg=" + result.info.original.avg;
             }
             catch (WebException ex)
@@ -873,6 +874,7 @@ namespace StoryApi
                 if ((int)(ex.Response as HttpWebResponse).StatusCode == 401 && retryCount <= 10)
                     return await UploadImage(asset);
             }
+            retryCount = 0;
             return null;
         }
 
@@ -921,6 +923,7 @@ namespace StoryApi
                 if ((int)(ex.Response as HttpWebResponse).StatusCode == 401 && retryCount <= 10)
                     return await WaitForMetaVideoFinish(access_key);
             }
+            retryCount = 0;
             return false;
         }
         public static async Task<bool> WaitForVideoUploadFinish(string access_key)
@@ -973,6 +976,7 @@ namespace StoryApi
                 if ((int)(ex.Response as HttpWebResponse).StatusCode == 401 && retryCount <= 10)
                     return await WaitForVideoUploadFinish(access_key);
             }
+            retryCount = 0;
             return false;
         }
 
