@@ -121,7 +121,7 @@ namespace StoryApi
             string response = await GetResponseFromRequest(webRequest);
             return JsonConvert.DeserializeObject<List<ShareData.Share>>(response);
         }
-        public static async Task<List<Comment>> GetComments(string id, string since)
+        public static async Task<List<Comment>> GetComments(string id, string since = null)
         {
             string requestURI = "https://story.kakao.com/a/activities/" + id + "/comments?lpp=30&order=desc";
             if (since != null)
