@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -636,12 +638,54 @@ namespace StoryApi
         {
             s.Write(bytes, 0, bytes.Length);
         }
+
+        private static async Task<string> GetUploadUrl(bool isImage)
+        {
+            using var client = new RestClient("https://story.kakao.com/a/web/media/upload-url");
+            var request = new RestRequest();
+            request.Method = Method.Post;
+            request.CookieContainer = _cookieContainer;
+            request.AddHeader("Accept", "application/json");
+            request.AddHeader("Accept-Encoding", "gzip, deflate, br");
+            request.AddHeader("Accept-Language", "ko");
+            request.AddHeader("Origin", "https://story.kakao.com");
+            request.AddHeader("Referer", "https://story.kakao.com/");
+            request.AddHeader("Sec-Ch-Ua", "\"Chromium\";v=\"122\", \"Not(A:Brand\";v=\"24\", \"Microsoft Edge\";v=\"122\"");
+            request.AddHeader("Sec-Ch-Ua-Mobile", "?0");
+            request.AddHeader("Sec-Ch-Ua-Platform", "\"Windows\"");
+            request.AddHeader("Sec-Fetch-Dest", "empty");
+            request.AddHeader("Sec-Fetch-Mode", "cors");
+            request.AddHeader("Sec-Fetch-Site", "same-origin");
+            request.AddHeader("X-Kakao-Apilevel", "49");
+            request.AddHeader("X-Kakao-Deviceinfo", "web:d;-;-");
+            request.AddHeader("X-Kakao-Vc", "185412afe1da9580e67f");
+            request.AddHeader("X-Requested-With", "XMLHttpRequest");
+
+            request.AddHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            if (isImage)
+            {
+                request.AddParameter("config", "/web/webstory-img");
+                request.AddParameter("upload_url", "https://up-api-kage-4story.kakao.com");
+            }
+            else
+            {
+                request.AddParameter("config", "/web/webstory-video");
+                request.AddParameter("upload_url", "https://up-api-kage-4story-video.kakao.com");
+            }
+
+            var response = await client.ExecuteAsync(request);
+            var content = response.Content;
+            var jsonObject = JObject.Parse(content);
+            var uploadUrl = jsonObject["url"].ToString();
+            return uploadUrl;
+        }
+
         public static async Task<UploadedImageProp> UploadImage(string filepath)
         {
             string filename = Path.GetFileName(filepath);
             StreamReader fileStream = new StreamReader(filepath);
 
-            string requestURI = "https://up-api-kage-4story.kakao.com/web/webstory-img/";
+            string requestURI = await GetUploadUrl(true);
 
             HttpWebRequest request = WebRequest.CreateHttp(requestURI);
             request.Method = "POST";
@@ -685,7 +729,7 @@ namespace StoryApi
         {
             StreamReader fileStream = new StreamReader(asset.Path);
 
-            string requestURI = "https://up-api-kage-4story-video.kakao.com/web/webstory-video/";
+            string requestURI = await GetUploadUrl(false);
 
             string boundary = "----" + DateTime.Now.Ticks.ToString("x");
 
